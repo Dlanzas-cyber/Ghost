@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ghostwriter UCIP/UCIN</title>
+
+<!-- Librería para generar PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<style>
+:root {
+    --bg-color: #121212;
+    --panel-color: #1e1e1e;
+    --text-color: #ffffff;
+    --accent-color: #00d2ff;
+    --danger-color: #ff4b4b;
+    --success-color: #00e676;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100vh;
+    box-sizing: border-box;
+}
+
+.controls {
+    width: 100%;
+    max-width: 500px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+button {
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+#mic-btn {
+    background-color: #333;
+    color: white;
+    border: 2px solid var(--accent-color);
+    padding: 20px;
+    font-size: 1.1rem;
+}
+
+#mic-btn.recording {
+    background-color: var(--danger-color);
+    border-color: var(--danger-color);
+    animation: pulse 1.5s infinite;
+}
+
+#export-btn {
+    background: transparent;
+    color: var(--success-color);
+    border: 1px solid var(--success-color);
+    padding: 10px;
+}
+
+#export-btn:hover {
+    background-color: rgba(0, 230, 118, 0.1);
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
+#report-content {
+    width: 100%;
+    max-width: 500px;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.patient-info {
+    background-color: var(--panel-color);
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    border-left: 5px solid var(--accent-color);
+}
+
+.log-container {
+    background-color: var(--panel-color);
+    flex-grow: 1;
+    border-radius: 10px;
+    padding: 15px;
+    overflow-y: auto;
+}
+
+.log-entry {
+    border-bottom: 1px solid #333;
+    padding: 10px 0;
+    display: flex;
+    gap: 15px;
+}
+
+.log-time {
+    color: var(--accent-color);
+    font-weight: bold;
+    min-width: 75px;
+}
+
+.log-text {
+    flex-grow: 1;
+}
+</style>
+</head>
+
+<body>
+
+<div class="controls">
+    <button id="mic-btn">🎙️ Tocar para hablar</button>
+    <button id="export-btn">📄 Exportar a PDF</button>
+</div>
+
+<div id="report-content">
+    <div class="header">
+        <h2>Reporte de Emergencia</h2>
+        <p>Registro Cronológico - UCIP/UCIN</p>
+    </div>
+
+    <div class="patient-info">
+        <strong>Paciente:</strong> Cama 4 - Neonato<br>
+        <strong>Peso actual:</strong> 1.200 kg<br>
+        <strong>Fecha:</strong> <span id="current-date"></span>
+    </div>
+
+    <div class="log-container" id="log-container">
+        <div class="log-entry" id="placeholder-text">
+            <div class="log-time">--:--:--</div>
+            <div class="log-text" style="color:#888;">
+                Esperando eventos... (Presiona el botón arriba para dictar)
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('current-date').innerText =
+    new Date().toLocaleDateString('es-ES');
+
+const micBtn = document.getElementById('mic-btn');
+const exportBtn = document.getElementById('export-btn');
+const logContainer = document.getElementById('log-container');
+
+const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+
+if (SpeechRecognition) {
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.lang = 'es-ES';
+    recognition.interimResults = false;
+
+    micBtn.addEventListener('click', () => {
+        micBtn.classList.contains('recording')
+            ? recognition.stop()
+            : recognition.start();
+    });
+
+    recognition.onstart = () => {
+        micBtn.classList.add('recording');
+        micBtn.innerText = 'Escuchando...';
+    };
+
+    recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        addLogEntry(transcript);
+    };
+
+    recognition.onend = () => {
+        micBtn.classList.remove('recording');
+        micBtn.innerText = '🎙️ Tocar para hablar';
+    };
+
+    recognition.onerror = () => {
+        micBtn.classList.remove('recording');
+        micBtn.innerText = 'Error. Intentar de nuevo';
+    };
+
+} else {
+    micBtn.innerText = 'Reconocimiento no soportado';
+    micBtn.disabled = true;
+}
+
+function addLogEntry(text) {
+
+    const placeholder = document.getElementById('placeholder-text');
+    if (placeholder) placeholder.remove();
+
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('es-ES', { hour12:false });
+
+    const entryDiv = document.createElement('div');
+    entryDiv.className = 'log-entry';
+
+    entryDiv.innerHTML = `
+        <div class="log-time">${timeString}</div>
+        <div class="log-text">${text}</div>
+    `;
+
+    logContainer.insertBefore(entryDiv, logContainer.firstChild);
+}
+
+exportBtn.addEventListener('click', () => {
+
+    const element = document.getElementById('report-content');
+
+    const opt = {
+        margin: 15,
+        filename: `Registro_Emergencia_${Date.now()}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, backgroundColor: '#121212' },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    const originalText = exportBtn.innerText;
+    exportBtn.innerText = 'Generando PDF...';
+
+    html2pdf().set(opt).from(element).save().then(() => {
+        exportBtn.innerText = originalText;
+    });
+
+});
+</script>
+
+</body>
+</html>
