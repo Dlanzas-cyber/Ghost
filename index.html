@@ -1,264 +1,66 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="pt-pt">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>UCIP/UCIN Ghostwriter</title>
-
-<!-- Librería para generar PDF -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
-<style>
-:root {
-    --bg-dark: #121212;
-    --bg-panel: #1e1e1e;
-    --text-color: #fff;
-    --accent: #00d2ff;
-    --danger: #ff4b4b;
-    --success: #00e676;
-}
-
-body {
-    font-family: "Segoe UI", Roboto, sans-serif;
-    margin: 0;
-    background-color: var(--bg-dark);
-    color: var(--text-color);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px;
-}
-
-header {
-    text-align: center;
-    margin-bottom: 20px;
-}
-
-header h1 {
-    margin: 0;
-    color: var(--accent);
-}
-
-.controls {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 20px;
-    justify-content: center;
-}
-
-button {
-    border-radius: 10px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: 0.3s;
-    border: none;
-}
-
-#mic-btn {
-    background-color: var(--bg-panel);
-    color: var(--text-color);
-    border: 2px solid var(--accent);
-    padding: 15px 25px;
-}
-
-#mic-btn.recording {
-    background-color: var(--danger);
-    border-color: var(--danger);
-    animation: pulse 1.5s infinite;
-}
-
-#export-btn {
-    background: transparent;
-    color: var(--success);
-    border: 2px solid var(--success);
-    padding: 15px 20px;
-}
-
-.quick-btns {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    justify-content: center;
-    margin-bottom: 20px;
-}
-
-.quick-btns button {
-    padding: 8px 12px;
-    border: 1px solid var(--accent);
-    background: transparent;
-    color: var(--accent);
-    font-size: 0.9rem;
-}
-
-#report-content {
-    width: 100%;
-    max-width: 550px;
-}
-
-.patient-card {
-    background-color: var(--bg-panel);
-    padding: 15px 20px;
-    border-radius: 12px;
-    margin-bottom: 20px;
-    border-left: 6px solid var(--accent);
-}
-
-.log-container {
-    display: flex;
-    flex-direction: column-reverse;
-    gap: 12px;
-    max-height: 400px;
-    overflow-y: auto;
-}
-
-.log-entry {
-    background-color: var(--bg-panel);
-    padding: 12px 16px;
-    border-radius: 12px;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    border-left: 4px solid var(--accent);
-}
-
-.log-time {
-    font-weight: bold;
-    color: var(--accent);
-    margin-right: 10px;
-    min-width: 70px;
-}
-
-@keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-    100% { transform: scale(1); }
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neonatal-SoundGuard</title>
+    <style>
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #f8fafc; height: 100vh; display: flex; flex-direction: column; text-align: center; }
+        header { height: 1/4; padding: 20px; background: #1e293b; border-bottom: 2px solid #334155; }
+        main { height: 2/4; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: background 0.5s; }
+        footer { height: 1/4; padding: 20px; overflow-y: auto; font-size: 0.9em; text-align: left; background: #1e293b; }
+        #db-display { font-size: 8rem; font-weight: bold; }
+        .status { font-size: 1.5rem; text-transform: uppercase; letter-spacing: 2px; }
+    </style>
 </head>
-
 <body>
 
-<header>
-    <h1>Reporte UCIP/UCIN</h1>
-    <p>Registro Cronológico de Eventos</p>
-</header>
+    <header>
+        <h1>Neonatal-SoundGuard</h1>
+        <p>Monitorização de Ruído em Tempo Real (UCIN)</p>
+    </header>
 
-<div class="controls">
-    <button id="mic-btn">🎙️ Iniciar Dictado</button>
-    <button id="export-btn">📄 Exportar PDF</button>
-</div>
+    <main id="container">
+        <div class="status" id="status-text">A INICIAR...</div>
+        <div id="db-display">--</div>
+        <div>decibéis (dB)</div>
+        <button onclick="iniciarApp()" style="margin-top: 20px; padding: 10px 20px;">Ativar Microfone</button>
+    </main>
 
-<div class="quick-btns">
-    <button data-text="Inicio RCP">Inicio RCP</button>
-    <button data-text="Adrenalina">Adrenalina</button>
-    <button data-text="Intubación">Intubación</button>
-</div>
+    <footer>
+        <h3>Manual de Uso Rápido</h3>
+        <p>1. Ative o microfone. 2. Coloque o dispositivo a 1m do leito. 3. Mantenha o indicador abaixo de 45dB.</p>
+        <h3>Perguntas Frequentes</h3>
+        <p><strong>Por que muda de cor?</strong> Verde < 45dB, Amarelo 45-60dB, Vermelho > 60dB.</p>
+    </footer>
 
-<div id="report-content">
-    <div class="patient-card">
-        <strong>Paciente:</strong> Cama 4 - Neonato<br>
-        <strong>Peso:</strong> 1.200 kg<br>
-        <strong>Fecha:</strong> <span id="current-date"></span>
-    </div>
+    <script>
+        async function iniciarApp() {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const context = new AudioContext();
+            const source = context.createMediaStreamSource(stream);
+            const analyser = context.createAnalyser();
+            source.connect(analyser);
+            analyser.fftSize = 256;
+            const dataArray = new Uint8Array(analyser.frequencyBinCount);
 
-    <div class="log-container" id="log-container">
-        <div class="log-entry" id="placeholder">
-            <span class="log-time">--:--:--</span>
-            <span style="color:#888;">Esperando eventos...</span>
-        </div>
-    </div>
-</div>
-
-<script>
-// Fecha actual
-document.getElementById('current-date').innerText =
-    new Date().toLocaleDateString('es-ES');
-
-const logContainer = document.getElementById('log-container');
-const micBtn = document.getElementById('mic-btn');
-const exportBtn = document.getElementById('export-btn');
-const quickButtons = document.querySelectorAll('.quick-btns button');
-
-// --- Reconocimiento de voz ---
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-if(SpeechRecognition){
-    const recognition = new SpeechRecognition();
-    recognition.continuous = false;
-    recognition.lang = 'es-ES';
-    recognition.interimResults = false;
-
-    micBtn.addEventListener('click', () => {
-        if(micBtn.classList.contains('recording')){
-            recognition.stop();
-        } else {
-            recognition.start();
+            function update() {
+                analyser.getByteFrequencyData(dataArray);
+                let sum = 0;
+                for(let i = 0; i < dataArray.length; i++) sum += dataArray[i];
+                let db = Math.round(sum / dataArray.length * 1.5);
+                
+                document.getElementById('db-display').innerText = db;
+                const container = document.getElementById('container');
+                
+                if(db < 45) { container.style.background = '#065f46'; document.getElementById('status-text').innerText = 'SEGURO'; }
+                else if(db < 60) { container.style.background = '#92400e'; document.getElementById('status-text').innerText = 'ATENÇÃO'; }
+                else { container.style.background = '#991b1b'; document.getElementById('status-text').innerText = 'CRÍTICO'; }
+                
+                requestAnimationFrame(update);
+            }
+            update();
         }
-    });
-
-    recognition.onstart = () => {
-        micBtn.classList.add('recording');
-        micBtn.innerText = 'Escuchando...';
-    };
-
-    recognition.onresult = (event) => {
-        if(event.results && event.results[0] && event.results[0][0]){
-            addLogEntry(event.results[0][0].transcript);
-        }
-    };
-
-    recognition.onend = () => {
-        micBtn.classList.remove('recording');
-        micBtn.innerText = '🎙️ Iniciar Dictado';
-    };
-
-    recognition.onerror = () => {
-        micBtn.classList.remove('recording');
-        micBtn.innerText = 'Error. Intentar de nuevo';
-    };
-
-} else {
-    micBtn.innerText = 'Reconocimiento no soportado';
-    micBtn.disabled = true;
-}
-
-// --- Función para añadir eventos ---
-function addLogEntry(text){
-    const placeholder = document.getElementById('placeholder');
-    if(placeholder) placeholder.remove();
-
-    const now = new Date();
-    const time = now.toLocaleTimeString('es-ES', { hour12:false });
-
-    const entry = document.createElement('div');
-    entry.className = 'log-entry';
-    entry.innerHTML = `<span class="log-time">${time}</span><span>${text}</span>`;
-    logContainer.appendChild(entry);
-}
-
-// --- Botones rápidos ---
-quickButtons.forEach(btn => {
-    btn.addEventListener('click', () => addLogEntry(btn.dataset.text));
-});
-
-// --- Exportar a PDF ---
-exportBtn.addEventListener('click', () => {
-    const element = document.getElementById('report-content');
-    const originalText = exportBtn.innerText;
-    exportBtn.innerText = 'Generando PDF...';
-
-    html2pdf().set({
-        margin: 15,
-        filename: `Registro_UCIP_${Date.now()}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, backgroundColor: '#ffffff' },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    }).from(element).save().then(() => {
-        exportBtn.innerText = originalText;
-    });
-});
-</script>
-
+    </script>
 </body>
 </html>
